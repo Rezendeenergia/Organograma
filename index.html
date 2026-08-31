@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script src="./org-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   html, body { margin: 0; padding: 0; background: #ffffff; }
   * { box-sizing: border-box; }
@@ -20,13 +21,18 @@
   input, select, button { font-family: Archivo, Helvetica, sans-serif; }
   ::-webkit-scrollbar { height: 10px; width: 10px; }
   ::-webkit-scrollbar-thumb { background: #d5d5d5; border-radius: 8px; }
+  @keyframes logoHighlight {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(239,78,0,0)); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 14px rgba(239,78,0,0.85)); transform: scale(1.07); }
+  }
+  .logo-pulse { animation: logoHighlight 1.8s ease-in-out 2; }
 </style>
 </helmet>
 <div style="min-height:100vh;background:#ffffff;font-family:Archivo, Helvetica, sans-serif;color:#14161A;display:flex;flex-direction:column">
 
   <header style="background:#14161A;color:#fff;padding:18px 32px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:18px">
-      <img src="./logo-rezende.png" alt="Rezende Energia" style="height:52px;width:auto;object-fit:contain" />
+      <img src="./logo-rezende.png" alt="Rezende Energia" class="{{ logoClass }}" style="height:52px;width:auto;object-fit:contain" />
       <div style="display:flex;flex-direction:column;gap:6px;border-left:1px solid #33363c;padding-left:18px">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#EF4E00">Rezende Energia</span>
         <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase">Organograma da Empresa</h1>
@@ -67,6 +73,17 @@
       </div>
     </div>
 
+    <sc-if value="{{ hasEquipe }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:7px;min-width:200px">
+        <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Tipo de equipe</label>
+        <select value="{{ equipe }}" onChange="{{ onEquipe }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer">
+          <sc-for list="{{ equipeOptions }}" as="eq" hint-placeholder-count="4">
+            <option value="{{ eq.value }}">{{ eq.label }}</option>
+          </sc-for>
+        </select>
+      </div>
+    </sc-if>
+
     <div style="display:flex;flex-direction:column;gap:7px;min-width:260px">
       <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Unidade / Equipe</label>
       <select value="{{ unidade }}" onChange="{{ onUnidade }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer">
@@ -92,6 +109,16 @@
     </div>
 
     <button type="button" onClick="{{ onReset }}" style="height:34px;padding:0 16px;border:1px solid #14161A;background:#14161A;color:#fff;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">Limpar filtros</button>
+
+    <div style="display:flex;flex-direction:column;gap:7px;margin-left:auto">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Atualizar base (.xlsx ou .json)</label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="file" accept=".json,.xlsx,.xls" onChange="{{ onFile }}" style="font-size:12px;max-width:220px" />
+        <sc-if value="{{ fileMsg }}" hint-placeholder-val="{{ false }}">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:{{ fileMsgColor }}">{{ fileMsg }}</span>
+        </sc-if>
+      </div>
+    </div>
   </div>
 
   <div style="padding:10px 32px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b8f96">
@@ -101,7 +128,10 @@
   </div>
 
   <div ref="{{ wrapRef }}" style="flex:1;overflow:auto;padding:44px 32px 64px;background:#fafafa">
-    <div style="position:relative;transform:scale({{ zoom }});transform-origin:{{ transformOrigin }};width:{{ canvasW }}px;height:{{ canvasH }}px;margin:{{ canvasMargin }}">
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:60px 20px;text-align:center;color:#8b8f96;font-size:14px">Nenhum resultado para essa combinação de filtros. Tente limpar os filtros.</div>
+    </sc-if>
+    <div style="position:relative;display:{{ canvasDisplay }};transform:scale({{ zoom }});transform-origin:{{ transformOrigin }};width:{{ canvasW }}px;height:{{ canvasH }}px;margin:{{ canvasMargin }}">
       <sc-for list="{{ segs }}" as="s" hint-placeholder-count="6">
         <div style="position:absolute;background:#bdbdbd;left:{{ s.x }}px;top:{{ s.y }}px;width:{{ s.w }}px;height:{{ s.h }}px"></div>
       </sc-for>
@@ -133,31 +163,85 @@ const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]
 const isTopo = cargo => /^(ceo|cto)$/i.test((cargo || '').trim());
 
 class Component extends DCLogic {
-  state = { setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', busca: '', zoom: null, collapsed: null, wrapW: 1200 };
+  state = { setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', equipe: 'Todas', busca: '', zoom: null, collapsed: null, wrapW: 1200, wrapH: 600, fileMsg: '', fileMsgColor: '#8b8f96', logoPulse: false };
 
   componentDidMount() {
-    this.data = (typeof window !== 'undefined' && window.ORG_DATA) || [];
+    let custom = null;
+    try { const raw = localStorage.getItem('org_data_override'); if (raw) custom = JSON.parse(raw); } catch (e) {}
+    this.data = custom || (typeof window !== 'undefined' && window.ORG_DATA) || [];
     this.measure();
     this._onResize = () => this.measure();
     window.addEventListener('resize', this._onResize);
+    this._logoInterval = setInterval(() => {
+      this.setState({ logoPulse: true });
+      setTimeout(() => this.setState({ logoPulse: false }), 3600);
+    }, 120000);
     this.forceUpdate();
   }
-  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); clearInterval(this._logoInterval); }
+
+  applyData(parsed) {
+    if (!Array.isArray(parsed) || !parsed.length || !Array.isArray(parsed[0].pessoas)) throw new Error('formato inesperado');
+    this.data = parsed;
+    try { localStorage.setItem('org_data_override', JSON.stringify(parsed)); } catch (e) {}
+    this.setState({ setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', equipe: 'Todas', busca: '', collapsed: null, zoom: null, fileMsg: 'Base atualizada com sucesso.', fileMsgColor: '#0F6B4F' });
+  }
+
+  parseWorkbook(buf) {
+    const wb = window.XLSX.read(buf, { type: 'array' });
+    const colOf = (header, label) => Object.keys(header).find(k => (header[k] || '').toString().toLowerCase().startsWith(label));
+    return wb.SheetNames.map(name => {
+      const sheet = wb.Sheets[name];
+      const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 'A', defval: '' });
+      if (!rows.length) return { unidade: name, pessoas: [] };
+      const header = rows[0];
+      const cId = colOf(header, 'id'), cNome = colOf(header, 'nome'), cCargo = colOf(header, 'cargo'),
+        cDep = colOf(header, 'departamento'), cGes = colOf(header, 'gestor'), cNiv = colOf(header, 'nivel'),
+        cReg = colOf(header, 'regional'), cSet = colOf(header, 'setor'), cEq = colOf(header, 'tipo_equipe');
+      const pessoas = [];
+      rows.slice(1).forEach(r => {
+        const id = +r[cId]; const nome = (r[cNome] || '').toString().trim();
+        if (!id || !nome) return;
+        pessoas.push({
+          id, nome, cargo: (r[cCargo] || '').toString().trim(), dep: (r[cDep] || '').toString().trim(),
+          gestor: +(r[cGes] || 0), nivel: +(r[cNiv] || 0), regional: (r[cReg] || '').toString().trim().toUpperCase(),
+          setor: (r[cSet] || '').toString().trim(), equipe: cEq ? (r[cEq] || '').toString().trim() : ''
+        });
+      });
+      return { unidade: name, pessoas };
+    }).filter(u => u.pessoas.length);
+  }
+
+  loadFile(file) {
+    const isXlsx = /\.xlsx?$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = isXlsx ? this.parseWorkbook(reader.result) : JSON.parse(reader.result);
+        this.applyData(parsed);
+      } catch (e) {
+        this.setState({ fileMsg: 'Arquivo inválido: use uma planilha (.xlsx) ou .json no formato do organograma.', fileMsgColor: '#C43F00' });
+      }
+    };
+    if (isXlsx) reader.readAsArrayBuffer(file); else reader.readAsText(file);
+  }
 
   measure() {
     const el = this.wrap;
-    if (el && el.clientWidth) this.setState({ wrapW: el.clientWidth - 64 });
+    if (el && el.clientWidth) this.setState({ wrapW: el.clientWidth - 64, wrapH: el.clientHeight - 40 });
   }
 
   set(patch) { this.setState(Object.assign({ collapsed: null }, patch, { zoom: null })); }
 
   units() {
     const d = this.data || [];
-    const { setor, regional } = this.state;
+    const { setor, regional, equipe } = this.state;
     return d.filter(u => {
       const s = (u.pessoas[0] && u.pessoas[0].setor) || (/^(RZ|PA|RETRO|TRATOR|FRETE|APOIO)/.test(u.unidade) ? 'Operacional' : 'Administrativo');
       const r = (u.pessoas.find(p => p.regional) || {}).regional || 'OESTE';
-      return (setor === 'Todos' || s === setor) && (regional === 'Todas' || r === regional.toUpperCase());
+      const eqs = new Set(u.pessoas.map(p => p.equipe).filter(Boolean));
+      const matchesEquipe = equipe === 'Todas' || eqs.has(equipe);
+      return (setor === 'Todos' || s === setor) && (regional === 'Todas' || r === regional.toUpperCase()) && matchesEquipe;
     });
   }
 
@@ -215,6 +299,7 @@ class Component extends DCLogic {
     const collapsed = this.state.collapsed;
     const auto = collapsed === null;
     const eff = {};
+    let anyCollapsed = false;
     const placed = [], segs = [];
     let cursor = 0;
     const countAll = n => (tree.kids.get(n.key) || []).reduce((a, k) => a + 1 + countAll(k), 0);
@@ -231,6 +316,7 @@ class Component extends DCLogic {
         x = (xs[0] + xs[xs.length - 1]) / 2;
       }
       const y = depth * (74 + GY);
+      if (isCol) anyCollapsed = true;
       placed.push({ node: n, x, y, h, depth, hidden: isCol ? countAll(n) : 0, hasKids: (tree.kids.get(n.key) || []).length > 0 });
       if (kids.length) {
         const cy = y + h;
@@ -253,7 +339,7 @@ class Component extends DCLogic {
     }
     const maxX = placed.reduce((a, p) => Math.max(a, p.x + CARD_W), 0);
     const maxY = placed.reduce((a, p) => Math.max(a, p.y + p.h), 0);
-    return { placed, segs, w: Math.max(maxX, 200), h: Math.max(maxY, 200) };
+    return { placed, segs, w: Math.max(maxX, 200), h: Math.max(maxY, 200), fullyExpanded: !anyCollapsed };
   }
 
   renderVals() {
@@ -287,7 +373,9 @@ class Component extends DCLogic {
       };
     });
 
-    const autoZoom = Math.min(1, Math.max(0.6, st.wrapW / (L.w + 20)));
+    const floor = L.fullyExpanded ? 0.22 : 0.6;
+    const fitW = st.wrapW / (L.w + 20), fitH = st.wrapH / (L.h + 20);
+    const autoZoom = L.fullyExpanded ? Math.max(floor, Math.min(1, fitW, fitH)) : Math.min(1, Math.max(floor, fitW));
     const zoom = st.zoom == null ? autoZoom : st.zoom;
     const mk = (list, cur, key) => list.map(label => ({
       label, bg: label === cur ? '#14161A' : '#fff', fg: label === cur ? '#fff' : '#14161A',
@@ -297,16 +385,26 @@ class Component extends DCLogic {
     const unidadeOptions = [{ value: 'CONSOLIDADO', label: 'Consolidado (todas as unidades do filtro)' }]
       .concat(this.units().map(u => ({ value: u.unidade, label: u.unidade + '  ·  ' + u.pessoas.length + ' pessoas' })));
 
+    const equipeSet = new Set();
+    (this.data || []).forEach(u => u.pessoas.forEach(p => { if (p.equipe) equipeSet.add(p.equipe); }));
+    const hasEquipe = equipeSet.size > 0;
+    const equipeOptions = [{ value: 'Todas', label: 'Todas as equipes' }]
+      .concat([...equipeSet].sort().map(e => ({ value: e, label: e })));
+
     const levels = L.placed.reduce((a, p) => Math.max(a, p.depth + 1), 0);
     const matches = q ? nodes.filter(n => n.border.indexOf('#14161A') >= 0).length : 0;
 
     return {
       setorOptions: mk(['Todos', 'Administrativo', 'Operacional'], st.setor, 'setor'),
       regionalOptions: mk(['Todas', 'Oeste', 'Nordeste'], st.regional, 'regional'),
+      hasEquipe, equipeOptions, equipe: st.equipe,
+      onEquipe: e => this.setState(s => ({ equipe: e.target.value, setor: e.target.value !== 'Todas' && s.setor === 'Administrativo' ? 'Todos' : s.setor, unidade: 'CONSOLIDADO', collapsed: null, zoom: null })),
       unidadeOptions, unidade: st.unidade, busca: st.busca,
       onUnidade: e => this.setState({ unidade: e.target.value, collapsed: null, zoom: null }),
       onBusca: e => this.setState({ busca: e.target.value }),
-      onReset: () => this.setState({ setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', busca: '', collapsed: null, zoom: null }),
+      onFile: e => { const f = e.target.files && e.target.files[0]; if (f) this.loadFile(f); },
+      fileMsg: st.fileMsg, fileMsgColor: st.fileMsgColor,
+      onReset: () => this.setState({ setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', equipe: 'Todas', busca: '', collapsed: null, zoom: null }),
       onZoomIn: () => this.setState({ zoom: Math.min(1.6, Math.round((zoom + 0.1) * 100) / 100) }),
       onZoomOut: () => this.setState({ zoom: Math.max(0.25, Math.round((zoom - 0.1) * 100) / 100) }),
       onFit: () => this.setState({ zoom: null }),
@@ -316,6 +414,8 @@ class Component extends DCLogic {
       zoomLabel: Math.round(zoom * 100) + '%',
       transformOrigin: levels <= 3 ? 'top center' : '0 0',
       canvasMargin: levels <= 3 ? '0 auto' : '0',
+      isEmpty: nodes.length === 0, canvasDisplay: nodes.length === 0 ? 'none' : 'block',
+      logoClass: st.logoPulse ? 'logo-pulse' : '',
       totalShown: nodes.length, totalLevels: levels, totalUnidades: tree.unitCount,
       contextLabel: (st.setor === 'Todos' ? 'Todos os setores' : st.setor) + ' / ' + (st.regional === 'Todas' ? 'Todas as regionais' : st.regional) + ' / ' + (st.unidade === 'CONSOLIDADO' ? 'Consolidado' : st.unidade),
       buscaLabel: q ? matches + ' resultado(s) para “' + st.busca + '”' : ''
