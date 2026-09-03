@@ -73,17 +73,6 @@
       </div>
     </div>
 
-    <sc-if value="{{ hasEquipe }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;flex-direction:column;gap:7px;min-width:200px">
-        <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Tipo de equipe</label>
-        <select value="{{ equipe }}" onChange="{{ onEquipe }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer">
-          <sc-for list="{{ equipeOptions }}" as="eq" hint-placeholder-count="4">
-            <option value="{{ eq.value }}">{{ eq.label }}</option>
-          </sc-for>
-        </select>
-      </div>
-    </sc-if>
-
     <div style="display:flex;flex-direction:column;gap:7px;min-width:260px">
       <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Unidade / Equipe</label>
       <select value="{{ unidade }}" onChange="{{ onUnidade }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer">
@@ -110,15 +99,6 @@
 
     <button type="button" onClick="{{ onReset }}" style="height:34px;padding:0 16px;border:1px solid #14161A;background:#14161A;color:#fff;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">Limpar filtros</button>
 
-    <div style="display:flex;flex-direction:column;gap:7px;margin-left:auto">
-      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Atualizar base (.xlsx ou .json)</label>
-      <div style="display:flex;align-items:center;gap:8px">
-        <input type="file" accept=".json,.xlsx,.xls" onChange="{{ onFile }}" style="font-size:12px;max-width:220px" />
-        <sc-if value="{{ fileMsg }}" hint-placeholder-val="{{ false }}">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:{{ fileMsgColor }}">{{ fileMsg }}</span>
-        </sc-if>
-      </div>
-    </div>
   </div>
 
   <div style="padding:10px 32px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b8f96">
