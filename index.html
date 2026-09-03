@@ -383,7 +383,11 @@ class Component extends DCLogic {
     }));
 
     const unidadeOptions = [{ value: 'CONSOLIDADO', label: 'Consolidado (todas as unidades do filtro)' }]
-      .concat(this.units().map(u => ({ value: u.unidade, label: u.unidade + '  ·  ' + u.pessoas.length + ' pessoas' })));
+      .concat(this.units().map(u => {
+        const tipos = [...new Set(u.pessoas.map(p => p.equipe).filter(Boolean))];
+        const tag = tipos.length ? '  [' + tipos.join(', ') + ']' : '';
+        return { value: u.unidade, label: u.unidade + tag + '  ·  ' + u.pessoas.length + ' pessoas' };
+      }));
 
     const equipeSet = new Set();
     (this.data || []).forEach(u => u.pessoas.forEach(p => { if (p.equipe) equipeSet.add(p.equipe); }));
