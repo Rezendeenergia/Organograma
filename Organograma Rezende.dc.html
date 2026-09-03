@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="./org-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  * { box-sizing: border-box; }
+  a { color: #EF4E00; text-decoration: none; }
+  a:hover { color: #C43F00; }
+  input, select, button { font-family: Archivo, Helvetica, sans-serif; }
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d5d5d5; border-radius: 8px; }
+  @keyframes logoHighlight {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(239,78,0,0)); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 14px rgba(239,78,0,0.85)); transform: scale(1.07); }
+  }
+  .logo-pulse { animation: logoHighlight 1.8s ease-in-out 2; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#ffffff;font-family:Archivo, Helvetica, sans-serif;color:#14161A;display:flex;flex-direction:column">
+
+  <header style="background:#14161A;color:#fff;padding:18px 32px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:18px">
+      <img src="./logo-rezende.png" alt="Rezende Energia" class="{{ logoClass }}" style="height:52px;width:auto;object-fit:contain" />
+      <div style="display:flex;flex-direction:column;gap:6px;border-left:1px solid #33363c;padding-left:18px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#EF4E00">Rezende Energia</span>
+        <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase">Organograma da Empresa</h1>
+      </div>
+    </div>
+    <div style="display:flex;gap:28px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#8b8f96">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span>Exibindo</span>
+        <strong style="font-family:Archivo,sans-serif;font-size:22px;font-weight:700;letter-spacing:0;color:#fff">{{ totalShown }}</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span>Níveis</span>
+        <strong style="font-family:Archivo,sans-serif;font-size:22px;font-weight:700;letter-spacing:0;color:#fff">{{ totalLevels }}</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span>Unidades</span>
+        <strong style="font-family:Archivo,sans-serif;font-size:22px;font-weight:700;letter-spacing:0;color:#fff">{{ totalUnidades }}</strong>
+      </div>
+    </div>
+  </header>
+
+  <div style="padding:16px 32px;border-bottom:1px solid #e7e7e7;display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Setor</label>
+      <div style="display:flex;gap:0;border:1px solid #dcdcdc">
+        <sc-for list="{{ setorOptions }}" as="opt" hint-placeholder-count="3">
+          <button type="button" onClick="{{ opt.onPick }}" style="padding:9px 16px;border:0;background:{{ opt.bg }};color:{{ opt.fg }};font-size:12px;font-weight:600;letter-spacing:0.04em;cursor:pointer">{{ opt.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Regional</label>
+      <div style="display:flex;gap:0;border:1px solid #dcdcdc">
+        <sc-for list="{{ regionalOptions }}" as="opt" hint-placeholder-count="3">
+          <button type="button" onClick="{{ opt.onPick }}" style="padding:9px 16px;border:0;background:{{ opt.bg }};color:{{ opt.fg }};font-size:12px;font-weight:600;letter-spacing:0.04em;cursor:pointer">{{ opt.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:7px;min-width:260px">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Unidade / Equipe</label>
+      <select value="{{ unidade }}" onChange="{{ onUnidade }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer">
+        <sc-for list="{{ unidadeOptions }}" as="u" hint-placeholder-count="6">
+          <option value="{{ u.value }}">{{ u.label }}</option>
+        </sc-for>
+      </select>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:7px;min-width:210px">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Buscar pessoa ou cargo</label>
+      <input type="text" value="{{ busca }}" onChange="{{ onBusca }}" placeholder="ex. Hélio, Encarregado" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;color:#14161A;outline:none" />
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Zoom</label>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" onClick="{{ onZoomOut }}" style="width:32px;height:34px;border:1px solid #dcdcdc;background:#fff;font-size:16px;font-weight:600;cursor:pointer;color:#14161A">–</button>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;width:46px;text-align:center">{{ zoomLabel }}</span>
+        <button type="button" onClick="{{ onZoomIn }}" style="width:32px;height:34px;border:1px solid #dcdcdc;background:#fff;font-size:16px;font-weight:600;cursor:pointer;color:#14161A">+</button>
+        <button type="button" onClick="{{ onFit }}" style="height:34px;padding:0 12px;border:1px solid #dcdcdc;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#14161A">Ajustar</button>
+      </div>
+    </div>
+
+    <button type="button" onClick="{{ onReset }}" style="height:34px;padding:0 16px;border:1px solid #14161A;background:#14161A;color:#fff;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer">Limpar filtros</button>
+
+  </div>
+
+  <div style="padding:10px 32px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #f0f0f0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8b8f96">
+    <span style="color:#14161A;font-weight:500">{{ contextLabel }}</span>
+    <span>{{ buscaLabel }}</span>
+    <span>Clique num cartão com contador para recolher / expandir</span>
+  </div>
+
+  <div ref="{{ wrapRef }}" style="flex:1;overflow:auto;padding:44px 32px 64px;background:#fafafa">
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:60px 20px;text-align:center;color:#8b8f96;font-size:14px">Nenhum resultado para essa combinação de filtros. Tente limpar os filtros.</div>
+    </sc-if>
+    <div style="position:relative;display:{{ canvasDisplay }};transform:scale({{ zoom }});transform-origin:{{ transformOrigin }};width:{{ canvasW }}px;height:{{ canvasH }}px;margin:{{ canvasMargin }}">
+      <sc-for list="{{ segs }}" as="s" hint-placeholder-count="6">
+        <div style="position:absolute;background:#bdbdbd;left:{{ s.x }}px;top:{{ s.y }}px;width:{{ s.w }}px;height:{{ s.h }}px"></div>
+      </sc-for>
+      <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="8">
+        <div onClick="{{ n.onClick }}" title="{{ n.title }}" style="position:absolute;left:{{ n.x }}px;top:{{ n.y }}px;width:{{ n.w }}px;height:{{ n.h }}px;background:{{ n.bg }};border:{{ n.border }};box-shadow:{{ n.shadow }};color:{{ n.fg }};padding:9px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px;cursor:{{ n.cursor }};overflow:hidden">
+          <span style="font-size:13px;font-weight:700;line-height:1.15;letter-spacing:0.01em;text-wrap:pretty">{{ n.nome }}</span>
+          <span style="font-size:10.5px;font-weight:500;line-height:1.2;opacity:0.88;text-transform:uppercase;letter-spacing:0.05em;text-wrap:pretty">{{ n.cargo }}</span>
+          <sc-if value="{{ n.hidden }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;right:6px;bottom:5px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:500;background:rgba(0,0,0,0.22);padding:1px 5px;border-radius:9px">+{{ n.hidden }}</span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <footer style="padding:14px 32px;border-top:1px solid #e7e7e7;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#8b8f96">
+    <span>Equipes operacionais partem da gerência operacional — CEO e CTO omitidos</span>
+    <div style="display:flex;gap:16px;align-items:center">
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;background:#C43F00;display:inline-block"></span>Topo da estrutura</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;background:#EF4E00;display:inline-block"></span>Demais níveis</span>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#EF4E00&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#EF4E00&quot;,&quot;#14161A&quot;,&quot;#0F6B4F&quot;,&quot;#1B4FA0&quot;]}}">
+const CARD_W = 178, GX = 18, GY = 54;
+const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const isTopo = cargo => /^(ceo|cto)$/i.test((cargo || '').trim());
+
+class Component extends DCLogic {
+  state = { setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', equipe: 'Todas', busca: '', zoom: null, collapsed: null, wrapW: 1200, wrapH: 600, fileMsg: '', fileMsgColor: '#8b8f96', logoPulse: false };
+
+  componentDidMount() {
+    let custom = null;
+    try { const raw = localStorage.getItem('org_data_override'); if (raw) custom = JSON.parse(raw); } catch (e) {}
+    this.data = custom || (typeof window !== 'undefined' && window.ORG_DATA) || [];
+    this.measure();
+    this._onResize = () => this.measure();
+    window.addEventListener('resize', this._onResize);
+    this._logoInterval = setInterval(() => {
+      this.setState({ logoPulse: true });
+      setTimeout(() => this.setState({ logoPulse: false }), 3600);
+    }, 120000);
+    this.forceUpdate();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); clearInterval(this._logoInterval); }
+
+  applyData(parsed) {
+    if (!Array.isArray(parsed) || !parsed.length || !Array.isArray(parsed[0].pessoas)) throw new Error('formato inesperado');
+    this.data = parsed;
+    try { localStorage.setItem('org_data_override', JSON.stringify(parsed)); } catch (e) {}
+    this.setState({ setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', equipe: 'Todas', busca: '', collapsed: null, zoom: null, fileMsg: 'Base atualizada com sucesso.', fileMsgColor: '#0F6B4F' });
+  }
+
+  parseWorkbook(buf) {
+    const wb = window.XLSX.read(buf, { type: 'array' });
+    const colOf = (header, label) => Object.keys(header).find(k => (header[k] || '').toString().toLowerCase().startsWith(label));
+    return wb.SheetNames.map(name => {
+      const sheet = wb.Sheets[name];
+      const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 'A', defval: '' });
+      if (!rows.length) return { unidade: name, pessoas: [] };
+      const header = rows[0];
+      const cId = colOf(header, 'id'), cNome = colOf(header, 'nome'), cCargo = colOf(header, 'cargo'),
+        cDep = colOf(header, 'departamento'), cGes = colOf(header, 'gestor'), cNiv = colOf(header, 'nivel'),
+        cReg = colOf(header, 'regional'), cSet = colOf(header, 'setor'), cEq = colOf(header, 'tipo_equipe');
+      const pessoas = [];
+      rows.slice(1).forEach(r => {
+        const id = +r[cId]; const nome = (r[cNome] || '').toString().trim();
+        if (!id || !nome) return;
+        pessoas.push({
+          id, nome, cargo: (r[cCargo] || '').toString().trim(), dep: (r[cDep] || '').toString().trim(),
+          gestor: +(r[cGes] || 0), nivel: +(r[cNiv] || 0), regional: (r[cReg] || '').toString().trim().toUpperCase(),
+          setor: (r[cSet] || '').toString().trim(), equipe: cEq ? (r[cEq] || '').toString().trim() : ''
+        });
+      });
+      return { unidade: name, pessoas };
+    }).filter(u => u.pessoas.length);
+  }
+
+  loadFile(file) {
+    const isXlsx = /\.xlsx?$/i.test(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = isXlsx ? this.parseWorkbook(reader.result) : JSON.parse(reader.result);
+        this.applyData(parsed);
+      } catch (e) {
+        this.setState({ fileMsg: 'Arquivo inválido: use uma planilha (.xlsx) ou .json no formato do organograma.', fileMsgColor: '#C43F00' });
+      }
+    };
+    if (isXlsx) reader.readAsArrayBuffer(file); else reader.readAsText(file);
+  }
+
+  measure() {
+    const el = this.wrap;
+    if (el && el.clientWidth) this.setState({ wrapW: el.clientWidth - 64, wrapH: el.clientHeight - 40 });
+  }
+
+  set(patch) { this.setState(Object.assign({ collapsed: null }, patch, { zoom: null })); }
+
+  units() {
+    const d = this.data || [];
+    const { setor, regional, equipe } = this.state;
+    return d.filter(u => {
+      const s = (u.pessoas[0] && u.pessoas[0].setor) || (/^(RZ|PA|RETRO|TRATOR|FRETE|APOIO)/.test(u.unidade) ? 'Operacional' : 'Administrativo');
+      const r = (u.pessoas.find(p => p.regional) || {}).regional || 'OESTE';
+      const eqs = new Set(u.pessoas.map(p => p.equipe).filter(Boolean));
+      const matchesEquipe = equipe === 'Todas' || eqs.has(equipe);
+      return (setor === 'Todos' || s === setor) && (regional === 'Todas' || r === regional.toUpperCase()) && matchesEquipe;
+    });
+  }
+
+  // Builds {nodes, childrenOf, roots} from the current selection
+  build() {
+    const units = this.units();
+    const sel = this.state.unidade;
+    const chosen = sel === 'CONSOLIDADO' ? units : units.filter(u => u.unidade === sel);
+    const operacionalOnly = chosen.length > 0 && chosen.every(u => {
+      const s = (u.pessoas[0] && u.pessoas[0].setor) || '';
+      return s === 'Operacional' || /^(RZ|PA|RETRO|TRATOR|FRETE|APOIO)/.test(u.unidade);
+    });
+
+    const byKey = new Map();
+    const parentOf = new Map();
+    chosen.forEach(u => {
+      const local = new Map(u.pessoas.map(p => [p.id, p]));
+      u.pessoas.forEach(p => {
+        const uSetor = p.setor || ((/^(RZ|PA|RETRO|TRATOR|FRETE|APOIO)/.test(u.unidade)) ? 'Operacional' : 'Administrativo');
+        const dropTop = uSetor === 'Operacional' && isTopo(p.cargo);
+        if (dropTop) return;
+        const key = norm(p.nome) + '|' + norm(p.cargo);
+        if (!byKey.has(key)) byKey.set(key, { key, nome: p.nome, cargo: p.cargo, dep: p.dep, regional: p.regional, setor: uSetor, unidades: [u.unidade] });
+        else { const e = byKey.get(key); if (e.unidades.indexOf(u.unidade) < 0) e.unidades.push(u.unidade); }
+        // resolve parent, skipping omitted CEO/CTO chains
+        let g = local.get(p.gestor), guard = 0;
+        while (g && uSetor === 'Operacional' && isTopo(g.cargo) && guard++ < 6) g = local.get(g.gestor);
+        if (g && g.id !== p.id) {
+          const pk = norm(g.nome) + '|' + norm(g.cargo);
+          if (!parentOf.has(key)) parentOf.set(key, pk);
+        }
+      });
+    });
+
+    // drop edges to unknown parents and break cycles
+    const nodes = [...byKey.values()];
+    const keys = new Set(nodes.map(n => n.key));
+    const parent = new Map();
+    parentOf.forEach((pk, k) => { if (keys.has(pk) && pk !== k) parent.set(k, pk); });
+    parent.forEach((pk, k) => {
+      let seen = new Set([k]), cur = pk, guard = 0;
+      while (cur && guard++ < 50) { if (seen.has(cur)) { parent.delete(k); break; } seen.add(cur); cur = parent.get(cur); }
+    });
+
+    const kids = new Map(nodes.map(n => [n.key, []]));
+    nodes.forEach(n => { const pk = parent.get(n.key); if (pk) kids.get(pk).push(n); });
+    const rank = n => (/^ceo$/i.test(n.cargo) ? -3 : /^cto$/i.test(n.cargo) ? -2 : /diretor/i.test(n.cargo) ? -1 : /gerente/i.test(n.cargo) ? 0 : /coordenador|supervisor/i.test(n.cargo) ? 1 : /encarregado|lider|líder/i.test(n.cargo) ? 2 : 3);
+    kids.forEach(list => list.sort((a, b) => rank(a) - rank(b) || a.nome.localeCompare(b.nome)));
+    const roots = nodes.filter(n => !parent.get(n.key));
+    roots.sort((a, b) => rank(a) - rank(b) || a.nome.localeCompare(b.nome));
+    return { nodes, kids, roots, operacionalOnly, unitCount: chosen.length };
+  }
+
+  layout(tree) {
+    const collapsed = this.state.collapsed;
+    const auto = collapsed === null;
+    const eff = {};
+    let anyCollapsed = false;
+    const placed = [], segs = [];
+    let cursor = 0;
+    const countAll = n => (tree.kids.get(n.key) || []).reduce((a, k) => a + 1 + countAll(k), 0);
+    const place = (n, depth) => {
+      const hasK = (tree.kids.get(n.key) || []).length > 0;
+      const isCol = auto ? (depth >= 1 && hasK && this.state.unidade === 'CONSOLIDADO') : !!collapsed[n.key];
+      if (isCol) eff[n.key] = 1;
+      const kids = isCol ? [] : (tree.kids.get(n.key) || []);
+      const h = 74;
+      let x;
+      if (!kids.length) { x = cursor; cursor += CARD_W + GX; }
+      else {
+        const xs = kids.map(k => place(k, depth + 1));
+        x = (xs[0] + xs[xs.length - 1]) / 2;
+      }
+      const y = depth * (74 + GY);
+      if (isCol) anyCollapsed = true;
+      placed.push({ node: n, x, y, h, depth, hidden: isCol ? countAll(n) : 0, hasKids: (tree.kids.get(n.key) || []).length > 0 });
+      if (kids.length) {
+        const cy = y + h;
+        segs.push({ x: x + CARD_W / 2 - 1, y: cy, w: 2, h: GY / 2 });
+        const cxs = kids.map(k => placed.find(p => p.node.key === k.key).x + CARD_W / 2);
+        const minX = Math.min.apply(null, cxs), maxX = Math.max.apply(null, cxs);
+        if (kids.length > 1) segs.push({ x: minX, y: cy + GY / 2 - 1, w: maxX - minX, h: 2 });
+        cxs.forEach(cx => segs.push({ x: cx - 1, y: cy + GY / 2, w: 2, h: GY / 2 }));
+      }
+      return x;
+    };
+    tree.roots.forEach(r => { place(r, 0); cursor += 44; });
+    this._eff = eff;
+    // pull childless top-level roots next to the first root that has children
+    const topWithKids = placed.find(p => p.depth === 0 && (tree.kids.get(p.node.key) || []).length > 0);
+    if (topWithKids) {
+      let nx = topWithKids.x + CARD_W + GX;
+      placed.filter(p => p.depth === 0 && p.node.key !== topWithKids.node.key && !(tree.kids.get(p.node.key) || []).length)
+        .forEach(p => { p.x = nx; nx += CARD_W + GX; });
+    }
+    const maxX = placed.reduce((a, p) => Math.max(a, p.x + CARD_W), 0);
+    const maxY = placed.reduce((a, p) => Math.max(a, p.y + p.h), 0);
+    return { placed, segs, w: Math.max(maxX, 200), h: Math.max(maxY, 200), fullyExpanded: !anyCollapsed };
+  }
+
+  renderVals() {
+    const accent = this.props.accentColor || '#EF4E00';
+    const st = this.state;
+    const tree = this.build();
+    const L = this.layout(tree);
+    const q = norm(st.busca);
+    const dark = '#C43F00';
+
+    const nodes = L.placed.map(p => {
+      const n = p.node;
+      const match = q && (norm(n.nome).indexOf(q) >= 0 || norm(n.cargo).indexOf(q) >= 0);
+      const dim = q && !match;
+      const top = p.depth === 0;
+      return {
+        key: n.key, nome: n.nome, cargo: n.cargo,
+        x: Math.round(p.x), y: Math.round(p.y), w: CARD_W, h: p.h,
+        bg: dim ? '#f1e6e0' : (top ? dark : accent),
+        fg: dim ? '#b9a79f' : '#fff',
+        border: match ? '2px solid #14161A' : '2px solid transparent',
+        shadow: match ? '0 6px 18px rgba(20,22,26,0.25)' : 'none',
+        cursor: p.hasKids ? 'pointer' : 'default',
+        hidden: p.hidden || 0,
+        title: n.cargo + ' · ' + n.dep + ' · ' + n.unidades.join(', '),
+        onClick: p.hasKids ? () => this.setState(s => {
+          const c = Object.assign({}, s.collapsed || this._eff || {});
+          if (c[n.key]) delete c[n.key]; else c[n.key] = 1;
+          return { collapsed: c };
+        }) : null
+      };
+    });
+
+    const floor = L.fullyExpanded ? 0.22 : 0.6;
+    const fitW = st.wrapW / (L.w + 20), fitH = st.wrapH / (L.h + 20);
+    const autoZoom = L.fullyExpanded ? Math.max(floor, Math.min(1, fitW, fitH)) : Math.min(1, Math.max(floor, fitW));
+    const zoom = st.zoom == null ? autoZoom : st.zoom;
+    const mk = (list, cur, key) => list.map(label => ({
+      label, bg: label === cur ? '#14161A' : '#fff', fg: label === cur ? '#fff' : '#14161A',
+      onPick: () => this.set({ [key]: label, unidade: 'CONSOLIDADO' })
+    }));
+
+    const unidadeOptions = [{ value: 'CONSOLIDADO', label: 'Consolidado (todas as unidades do filtro)' }]
+      .concat(this.units().map(u => {
+        const tipos = [...new Set(u.pessoas.map(p => p.equipe).filter(Boolean))];
+        const tag = tipos.length ? '  [' + tipos.join(', ') + ']' : '';
+        return { value: u.unidade, label: u.unidade + tag + '  ·  ' + u.pessoas.length + ' pessoas' };
+      }));
+
+    const equipeSet = new Set();
+    (this.data || []).forEach(u => u.pessoas.forEach(p => { if (p.equipe) equipeSet.add(p.equipe); }));
+    const hasEquipe = equipeSet.size > 0;
+    const equipeOptions = [{ value: 'Todas', label: 'Todas as equipes' }]
+      .concat([...equipeSet].sort().map(e => ({ value: e, label: e })));
+
+    const levels = L.placed.reduce((a, p) => Math.max(a, p.depth + 1), 0);
+    const matches = q ? nodes.filter(n => n.border.indexOf('#14161A') >= 0).length : 0;
+
+    return {
+      setorOptions: mk(['Todos', 'Administrativo', 'Operacional'], st.setor, 'setor'),
+      regionalOptions: mk(['Todas', 'Oeste', 'Nordeste'], st.regional, 'regional'),
+      hasEquipe, equipeOptions, equipe: st.equipe,
+      onEquipe: e => this.setState(s => ({ equipe: e.target.value, setor: e.target.value !== 'Todas' && s.setor === 'Administrativo' ? 'Todos' : s.setor, unidade: 'CONSOLIDADO', collapsed: null, zoom: null })),
+      unidadeOptions, unidade: st.unidade, busca: st.busca,
+      onUnidade: e => this.setState({ unidade: e.target.value, collapsed: null, zoom: null }),
+      onBusca: e => this.setState({ busca: e.target.value }),
+      onFile: e => { const f = e.target.files && e.target.files[0]; if (f) this.loadFile(f); },
+      fileMsg: st.fileMsg, fileMsgColor: st.fileMsgColor,
+      onReset: () => this.setState({ setor: 'Administrativo', regional: 'Todas', unidade: 'CONSOLIDADO', equipe: 'Todas', busca: '', collapsed: null, zoom: null }),
+      onZoomIn: () => this.setState({ zoom: Math.min(1.6, Math.round((zoom + 0.1) * 100) / 100) }),
+      onZoomOut: () => this.setState({ zoom: Math.max(0.25, Math.round((zoom - 0.1) * 100) / 100) }),
+      onFit: () => this.setState({ zoom: null }),
+      wrapRef: el => { if (el) { this.wrap = el; if (Math.abs((el.clientWidth - 64) - st.wrapW) > 8) this.measure(); } },
+      nodes, segs: L.segs.map(s => ({ x: Math.round(s.x), y: Math.round(s.y), w: Math.max(2, Math.round(s.w)), h: Math.max(2, Math.round(s.h)) })),
+      canvasW: Math.round(L.w), canvasH: Math.round(L.h), zoom: Math.round(zoom * 1000) / 1000,
+      zoomLabel: Math.round(zoom * 100) + '%',
+      transformOrigin: levels <= 3 ? 'top center' : '0 0',
+      canvasMargin: levels <= 3 ? '0 auto' : '0',
+      isEmpty: nodes.length === 0, canvasDisplay: nodes.length === 0 ? 'none' : 'block',
+      logoClass: st.logoPulse ? 'logo-pulse' : '',
+      totalShown: nodes.length, totalLevels: levels, totalUnidades: tree.unitCount,
+      contextLabel: (st.setor === 'Todos' ? 'Todos os setores' : st.setor) + ' / ' + (st.regional === 'Todas' ? 'Todas as regionais' : st.regional) + ' / ' + (st.unidade === 'CONSOLIDADO' ? 'Consolidado' : st.unidade),
+      buscaLabel: q ? matches + ' resultado(s) para “' + st.busca + '”' : ''
+    };
+  }
+}
+
+</script>
+</body>
+</html>
