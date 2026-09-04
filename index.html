@@ -75,9 +75,9 @@
 
     <div style="display:flex;flex-direction:column;gap:7px;min-width:260px">
       <label style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#8b8f96">Unidade / Equipe</label>
-      <select value="{{ unidade }}" onChange="{{ onUnidade }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer">
+      <select value="{{ unidade }}" onChange="{{ onUnidade }}" style="padding:9px 12px;border:1px solid #dcdcdc;background:#fff;font-size:13px;font-weight:600;color:#14161A;cursor:pointer;line-height:1.6">
         <sc-for list="{{ unidadeOptions }}" as="u" hint-placeholder-count="6">
-          <option value="{{ u.value }}">{{ u.label }}</option>
+          <option value="{{ u.value }}" style="padding:6px 4px;font-weight:500">{{ u.label }}</option>
         </sc-for>
       </select>
     </div>
@@ -364,8 +364,8 @@ class Component extends DCLogic {
     const unidadeOptions = [{ value: 'CONSOLIDADO', label: 'Consolidado (todas as unidades do filtro)' }]
       .concat(this.units().map(u => {
         const tipos = [...new Set(u.pessoas.map(p => p.equipe).filter(Boolean))];
-        const tag = tipos.length ? '  [' + tipos.join(', ') + ']' : '';
-        return { value: u.unidade, label: u.unidade + tag + '  ·  ' + u.pessoas.length + ' pessoas' };
+        const tag = tipos.length ? ' – ' + tipos.join(', ') : '';
+        return { value: u.unidade, label: u.unidade + tag + ' · ' + u.pessoas.length + (u.pessoas.length === 1 ? ' pessoa' : ' pessoas') };
       }));
 
     const equipeSet = new Set();
